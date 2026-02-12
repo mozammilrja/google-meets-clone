@@ -1,0 +1,55 @@
+.screenShareControl {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.shareButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: #fff;
+  color: #1f2937;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.shareButton:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.shareButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.shareButton.active {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
+
+.shareButton.active:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.error {
+  padding: 8px 12px;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+  max-width: 200px;
+}

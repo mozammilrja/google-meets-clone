@@ -1,0 +1,1 @@
+{"version":3,"file":"worker-manager.d.ts","sourceRoot":"","sources":["../../src/mediasoup/worker-manager.ts"],"names":[],"mappings":"AACA,OAAO,KAAK,EAAE,MAAM,EAAE,MAAM,gCAAgC,CAAC;AAW7D,qBAAa,aAAa;IACxB,OAAO,CAAC,OAAO,CAAgB;IAC/B,OAAO,CAAC,aAAa,CAAK;IAKpB,aAAa,IAAI,OAAO,CAAC,IAAI,CAAC;IAkCpC,aAAa,IAAI,MAAM;IAavB,UAAU,IAAI,MAAM,EAAE;IAOhB,QAAQ,IAAI,OAAO,CAAC,IAAI,CAAC;CAUhC"}
