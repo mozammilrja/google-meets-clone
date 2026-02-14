@@ -103,9 +103,9 @@ let SignalingGateway = SignalingGateway_1 = class SignalingGateway {
         }
     }
     async handleJoinMeeting(data, client) {
-        const { meetingId, participantId } = data;
+        const { meetingId, participantId, name } = data;
         const userId = client.data.userId;
-        this.logger.log(`[join-meeting] User ${userId} / Participant ${participantId} joining room: ${meetingId}`);
+        this.logger.log(`[join-meeting] User ${userId} / Participant ${participantId} (name: ${name}) joining room: ${meetingId}`);
         try {
             await client.join(meetingId);
             const rooms = Array.from(client.rooms);
@@ -115,7 +115,7 @@ let SignalingGateway = SignalingGateway_1 = class SignalingGateway {
                 userId,
                 meetingId,
                 socketId: client.id,
-                name: client.data.email,
+                name: name || client.data.email || 'Guest',
                 role: 'participant',
                 audio: false,
                 video: false,
@@ -390,6 +390,52 @@ let SignalingGateway = SignalingGateway_1 = class SignalingGateway {
             throw new websockets_1.WsException(err.message);
         }
     }
+    async handleReaction(data, client) {
+        const { meetingId, participantId, emoji } = data;
+        this.logger.log(`[Reaction] ${participantId} sent emoji "${emoji}" in meeting ${meetingId}`);
+        try {
+            if (!this.signalingService.isParticipantInMeeting(meetingId, participantId)) {
+                throw new Error('Participant not in meeting');
+            }
+            const presence = this.signalingService.getParticipant(meetingId, participantId);
+            const participantName = presence?.name || 'Unknown';
+            this.server.to(meetingId).emit('reaction-received', {
+                participantId,
+                participantName,
+                emoji,
+                timestamp: new Date(),
+            });
+            return { success: true };
+        }
+        catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            this.logger.error(`Error in reaction: ${err.message}`, err.stack);
+            throw new websockets_1.WsException(err.message);
+        }
+    }
+    async handleHandRaise(data, client) {
+        const { meetingId, participantId, raised } = data;
+        this.logger.log(`[Hand Raise] ${participantId} ${raised ? 'raised' : 'lowered'} hand in meeting ${meetingId}`);
+        try {
+            if (!this.signalingService.isParticipantInMeeting(meetingId, participantId)) {
+                throw new Error('Participant not in meeting');
+            }
+            const presence = this.signalingService.getParticipant(meetingId, participantId);
+            const participantName = presence?.name || 'Unknown';
+            this.server.to(meetingId).emit('hand-raise-changed', {
+                participantId,
+                participantName,
+                raised,
+                timestamp: new Date(),
+            });
+            return { success: true };
+        }
+        catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            this.logger.error(`Error in hand-raise: ${err.message}`, err.stack);
+            throw new websockets_1.WsException(err.message);
+        }
+    }
 };
 exports.SignalingGateway = SignalingGateway;
 __decorate([
@@ -468,6 +514,22 @@ __decorate([
         socket_io_1.Socket]),
     __metadata("design:returntype", Promise)
 ], SignalingGateway.prototype, "handleSendMessage", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('reaction'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, socket_io_1.Socket]),
+    __metadata("design:returntype", Promise)
+], SignalingGateway.prototype, "handleReaction", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)('hand-raise'),
+    __param(0, (0, websockets_1.MessageBody)()),
+    __param(1, (0, websockets_1.ConnectedSocket)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, socket_io_1.Socket]),
+    __metadata("design:returntype", Promise)
+], SignalingGateway.prototype, "handleHandRaise", null);
 exports.SignalingGateway = SignalingGateway = SignalingGateway_1 = __decorate([
     (0, websockets_1.WebSocketGateway)({
         cors: {

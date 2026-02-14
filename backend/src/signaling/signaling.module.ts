@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SignalingGateway } from './signaling.gateway';
 import { SignalingService } from './signaling.service';
+import { RedisSignalingService } from './redis-signaling.service';
 import { AuditModule } from '../audit/audit.module';
 import { RedisModule } from '../redis/redis.module';
 import { MeetingsModule } from '../meetings/meetings.module';
@@ -17,8 +18,12 @@ import { MeetingsModule } from '../meetings/meetings.module';
  * - RedisModule: For pub/sub across multiple backend instances
  * - MeetingsModule: For ChatService to handle real-time messaging
  * 
+ * Scaling Support:
+ * - Set ENABLE_REDIS_SIGNALING=true to use Redis-backed state for horizontal scaling
+ * 
  * Exports:
  * - SignalingService: For other modules to query or manipulate connected participants
+ * - RedisSignalingService: For Redis-backed state (horizontal scaling)
  */
 @Module({
   imports: [
@@ -36,7 +41,7 @@ import { MeetingsModule } from '../meetings/meetings.module';
       }),
     }),
   ],
-  providers: [SignalingGateway, SignalingService],
-  exports: [SignalingService],
+  providers: [SignalingGateway, SignalingService, RedisSignalingService],
+  exports: [SignalingService, RedisSignalingService],
 })
 export class SignalingModule {}

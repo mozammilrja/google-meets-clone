@@ -16,6 +16,8 @@ const meetings_module_1 = require("./meetings/meetings.module");
 const audit_module_1 = require("./audit/audit.module");
 const signaling_module_1 = require("./signaling/signaling.module");
 const redis_module_1 = require("./redis/redis.module");
+const health_controller_1 = require("./common/health.controller");
+const graceful_shutdown_service_1 = require("./common/graceful-shutdown.service");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -30,7 +32,9 @@ exports.AppModule = AppModule = __decorate([
             meetings_module_1.MeetingsModule,
             audit_module_1.AuditModule,
             signaling_module_1.SignalingModule,
-        ]
+        ],
+        controllers: [health_controller_1.HealthController],
+        providers: [graceful_shutdown_service_1.GracefulShutdownService],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

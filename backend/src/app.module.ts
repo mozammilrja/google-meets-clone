@@ -7,6 +7,8 @@ import { MeetingsModule } from './meetings/meetings.module';
 import { AuditModule } from './audit/audit.module';
 import { SignalingModule } from './signaling/signaling.module';
 import { RedisModule } from './redis/redis.module';
+import { HealthController } from './common/health.controller';
+import { GracefulShutdownService } from './common/graceful-shutdown.service';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { RedisModule } from './redis/redis.module';
     MeetingsModule,
     AuditModule,
     SignalingModule,
-  ]
+  ],
+  controllers: [HealthController],
+  providers: [GracefulShutdownService],
 })
 export class AppModule {}

@@ -3,6 +3,15 @@ import type { WorkerLogLevel, WorkerLogTag } from 'mediasoup/node/lib/WorkerType
 import * as os from 'os';
 
 /**
+ * TURN/STUN server configuration for NAT traversal
+ */
+export interface IceServer {
+  urls: string | string[];
+  username?: string;
+  credential?: string;
+}
+
+/**
  * Mediasoup configuration for SFU media server
  */
 export const config = {
@@ -13,9 +22,24 @@ export const config = {
     corsOrigins: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'],
   },
 
+  // Redis for distributed state (required for horizontal scaling)
+  redis: {
+    url: process.env.REDIS_URL || 'redis://localhost:6379',
+  },
+
   // JWT authentication
   jwt: {
     secret: process.env.JWT_SECRET || 'your-secret-key',
+  },
+
+  // TURN/STUN servers for NAT traversal
+  iceServers: parseIceServers(),
+
+  // Media server instance identification
+  instance: {
+    id: process.env.INSTANCE_ID || `media-${process.env.HOSTNAME || process.pid}-${Date.now()}`,
+    region: process.env.REGION || 'default',
+    zone: process.env.ZONE || 'default',
   },
 
   // Mediasoup workers
@@ -109,3 +133,59 @@ export const config = {
     path: process.env.RECORDING_PATH || '/tmp/recordings',
   },
 };
+
+/**
+ * Parse ICE servers from environment variables
+ * 
+ * Environment variable format:
+ * TURN_SERVERS=turn:turn1.example.com:3478?username=user&credential=pass,turn:turn2.example.com:3478?username=user&credential=pass
+ * STUN_SERVERS=stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302
+ */
+function parseIceServers(): IceServer[] {
+  const servers: IceServer[] = [];
+
+  // Default STUN servers (free, public)
+  const stunServers = process.env.STUN_SERVERS?.split(',') || [
+    'stun:stun.l.google.com:19302',
+    'stun:stun1.l.google.com:19302',
+    'stun:stun2.l.google.com:19302',
+  ];
+
+  for (const url of stunServers) {
+    servers.push({ urls: url.trim() });
+  }
+
+  // TURN servers (require credentials)
+  const turnServers = process.env.TURN_SERVERS?.split(',') || [];
+  for (const turnConfig of turnServers) {
+    if (!turnConfig.trim()) continue;
+
+    try {
+      const url = new URL(turnConfig.trim().replace('turn:', 'http://').replace('turns:', 'https://'));
+      const iceServer: IceServer = {
+        urls: turnConfig.trim().split('?')[0],
+      };
+
+      const username = url.searchParams.get('username');
+      const credential = url.searchParams.get('credential');
+
+      if (username) iceServer.username = username;
+      if (credential) iceServer.credential = credential;
+
+      servers.push(iceServer);
+    } catch (e) {
+      console.warn(`Invalid TURN server config: ${turnConfig}`);
+    }
+  }
+
+  // Single TURN server from individual env vars (simpler config)
+  if (process.env.TURN_URL) {
+    servers.push({
+      urls: process.env.TURN_URL,
+      username: process.env.TURN_USERNAME,
+      credential: process.env.TURN_CREDENTIAL,
+    });
+  }
+
+  return servers;
+}

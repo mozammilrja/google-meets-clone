@@ -12,6 +12,7 @@ const jwt_1 = require("@nestjs/jwt");
 const config_1 = require("@nestjs/config");
 const signaling_gateway_1 = require("./signaling.gateway");
 const signaling_service_1 = require("./signaling.service");
+const redis_signaling_service_1 = require("./redis-signaling.service");
 const audit_module_1 = require("../audit/audit.module");
 const redis_module_1 = require("../redis/redis.module");
 const meetings_module_1 = require("../meetings/meetings.module");
@@ -35,8 +36,8 @@ exports.SignalingModule = SignalingModule = __decorate([
                 }),
             }),
         ],
-        providers: [signaling_gateway_1.SignalingGateway, signaling_service_1.SignalingService],
-        exports: [signaling_service_1.SignalingService],
+        providers: [signaling_gateway_1.SignalingGateway, signaling_service_1.SignalingService, redis_signaling_service_1.RedisSignalingService],
+        exports: [signaling_service_1.SignalingService, redis_signaling_service_1.RedisSignalingService],
     })
 ], SignalingModule);
 //# sourceMappingURL=signaling.module.js.map

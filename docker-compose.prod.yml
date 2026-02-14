@@ -1,0 +1,227 @@
+# Production Docker Compose for MeetClone
+# Supports horizontal scaling with Redis-backed state management
+#
+# Usage:
+#   docker-compose -f docker-compose.prod.yml up -d
+#   docker-compose -f docker-compose.prod.yml up -d --scale backend=3 --scale media=2
+
+version: '3.8'
+
+services:
+  # =================================================================
+  # Infrastructure Services
+  # =================================================================
+  
+  # MongoDB - Primary database
+  mongodb:
+    image: mongo:7
+    container_name: meetclone-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password}
+      MONGO_INITDB_DATABASE: meetclone
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - meetclone-internal
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Redis - Session store, pub/sub, caching
+  redis:
+    image: redis:7-alpine
+    container_name: meetclone-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - meetclone-internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # =================================================================
+  # TURN Server (coturn) - NAT traversal
+  # =================================================================
+  
+  coturn:
+    image: coturn/coturn:latest
+    container_name: meetclone-coturn
+    restart: unless-stopped
+    network_mode: host  # Required for UDP relay
+    volumes:
+      - ./turnserver.conf:/etc/turnserver.conf:ro
+    environment:
+      - TURN_SECRET=${TURN_SECRET:-meetclone-turn-secret}
+    command: ["-c", "/etc/turnserver.conf"]
+
+  # =================================================================
+  # Load Balancer (nginx)
+  # =================================================================
+  
+  nginx:
+    image: nginx:alpine
+    container_name: meetclone-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - meetclone-public
+      - meetclone-internal
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =================================================================
+  # Application Services (Scalable)
+  # =================================================================
+  
+  # Backend API (can scale horizontally)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      MONGODB_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-password}@mongodb:27017/meetclone?authSource=admin
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
+      JWT_EXPIRATION: 24h
+      CLIENT_URL: ${CLIENT_URL:-http://localhost}
+      # Scaling configuration
+      ENABLE_REDIS_SIGNALING: "true"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - meetclone-internal
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4000/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # Media Server (scale with caution - each needs unique port range)
+  media:
+    build:
+      context: ./media
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    network_mode: host  # Required for WebRTC UDP traffic
+    environment:
+      NODE_ENV: production
+      PORT: 7000
+      JWT_SECRET: ${JWT_SECRET:-change-this-in-production}
+      CORS_ORIGINS: ${CLIENT_URL:-http://localhost}
+      REDIS_URL: redis://localhost:6379
+      # Mediasoup configuration
+      MEDIASOUP_NUM_WORKERS: ${MEDIASOUP_WORKERS:-4}
+      MEDIASOUP_LISTEN_IP: 0.0.0.0
+      MEDIASOUP_ANNOUNCED_IP: ${PUBLIC_IP:-127.0.0.1}
+      MEDIASOUP_MIN_PORT: 40000
+      MEDIASOUP_MAX_PORT: 49999
+      # TURN configuration
+      TURN_URL: turn:${PUBLIC_IP:-127.0.0.1}:3478
+      TURN_USERNAME: meetclone
+      TURN_CREDENTIAL: ${TURN_SECRET:-meetclone-turn-secret}
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 1  # Scale media servers carefully
+      resources:
+        limits:
+          cpus: '4'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:7000/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # Frontend (can scale horizontally)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost/api}
+        NEXT_PUBLIC_SIGNALING_URL: ${SIGNALING_URL:-http://localhost}
+        NEXT_PUBLIC_MEDIA_URL: ${MEDIA_URL:-http://localhost:7000}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    networks:
+      - meetclone-internal
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+# =================================================================
+# Networks
+# =================================================================
+
+networks:
+  meetclone-public:
+    driver: bridge
+  meetclone-internal:
+    driver: bridge
+    internal: true
+
+# =================================================================
+# Volumes
+# =================================================================
+
+volumes:
+  mongodb_data:
+  mongodb_config:
+  redis_data:

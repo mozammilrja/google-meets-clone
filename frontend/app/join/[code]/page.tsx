@@ -100,38 +100,38 @@ export default function JoinByCodePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-black flex items-center justify-center">
+    <div className="min-h-screen bg-gray-50 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-800 dark:to-black flex items-center justify-center">
       <div className="max-w-md w-full mx-4">
-        <div className="p-8 rounded-lg border border-slate-700 bg-slate-800/50 backdrop-blur-sm">
+        <div className="p-8 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 dark:backdrop-blur-sm shadow-lg">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-white mb-2">
-              Exit<span className="text-blue-500">Meet</span>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              MeetClone
             </h1>
-            <p className="text-slate-400">Join Meeting</p>
+            <p className="text-gray-600 dark:text-slate-400">Join Meeting</p>
           </div>
 
           {/* Loading State */}
           {isLoading && (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-slate-400">Finding meeting...</p>
-              <p className="text-slate-500 text-sm mt-2">Code: {code}</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-slate-400">Finding meeting...</p>
+              <p className="text-gray-400 dark:text-slate-500 text-sm mt-2">Code: {code}</p>
             </div>
           )}
 
           {/* Error State */}
           {error && !isLoading && (
             <div className="text-center py-8">
-              <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
-              <p className="text-red-400 mb-4">{error}</p>
+              <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
               <button
                 onClick={() => router.push('/meeting/lobby')}
-                className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+                className="px-6 py-2 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-lg transition"
               >
                 Go to Lobby
               </button>
@@ -141,18 +141,18 @@ export default function JoinByCodePage() {
           {/* Meeting Found - Ready to Join */}
           {meetingInfo && !isLoading && !error && (
             <div className="text-center">
-              <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
 
-              <h2 className="text-xl font-semibold text-white mb-2">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                 {meetingInfo.title || 'Meeting'}
               </h2>
 
-              <p className="text-slate-400 mb-6">
-                Code: <span className="font-mono text-blue-400">{meetingInfo.code.toUpperCase()}</span>
+              <p className="text-gray-600 dark:text-slate-400 mb-6">
+                Code: <span className="font-mono text-blue-600 dark:text-blue-400">{meetingInfo.code.toUpperCase()}</span>
               </p>
 
               <div className="space-y-3">
@@ -175,15 +175,15 @@ export default function JoinByCodePage() {
 
                 <button
                   onClick={() => router.push('/meeting/lobby')}
-                  className="w-full py-2 text-slate-400 hover:text-white transition"
+                  className="w-full py-2 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition"
                 >
                   Cancel
                 </button>
               </div>
 
               {user && (
-                <p className="text-slate-500 text-sm mt-6">
-                  Joining as <span className="text-slate-300">{user.name}</span>
+                <p className="text-gray-400 dark:text-slate-500 text-sm mt-6">
+                  Joining as <span className="text-gray-700 dark:text-slate-300">{user.name}</span>
                 </p>
               )}
             </div>

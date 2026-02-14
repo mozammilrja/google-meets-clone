@@ -217,6 +217,16 @@ export function useMediaStreaming() {
   }, [])
 
   /**
+   * Replace audio track
+   */
+  const replaceAudioTrack = useCallback(async (newTrack: MediaStreamTrack) => {
+    if (audioProducerRef.current) {
+      await audioProducerRef.current.replaceTrack({ track: newTrack })
+      console.log('[useMediaStreaming] Audio track replaced')
+    }
+  }, [])
+
+  /**
    * Start screen sharing
    */
   const startScreenShare = useCallback(async () => {
@@ -344,6 +354,7 @@ export function useMediaStreaming() {
     stopVideo,
     toggleAudio,
     toggleVideo,
+    replaceAudioTrack,
     replaceVideoTrack,
     startScreenShare,
     stopScreenShare,

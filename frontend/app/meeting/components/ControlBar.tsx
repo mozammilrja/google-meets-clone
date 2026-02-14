@@ -76,10 +76,10 @@ export function ControlBar({
   onCopyMeetingLink,
 }: ControlBarProps) {
   return (
-    <div className="h-20 border-t border-border bg-card/80 backdrop-blur-sm px-4 flex items-center justify-between">
+    <div className="h-20 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 flex items-center justify-between">
       {/* Left: Meeting Info */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground font-mono">
+        <span className="text-sm text-gray-600 dark:text-gray-400 font-mono">
           {meetingCode?.toUpperCase()}
         </span>
         {onCopyMeetingLink && (
@@ -100,7 +100,7 @@ export function ControlBar({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant={isAudioEnabled ? 'secondary' : 'destructive'}
+              variant={isAudioEnabled ? 'outline' : 'destructive'}
               size="icon"
               onClick={onToggleAudio}
               disabled={isLoading}
@@ -120,7 +120,7 @@ export function ControlBar({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant={isVideoEnabled ? 'secondary' : 'destructive'}
+              variant={isVideoEnabled ? 'outline' : 'destructive'}
               size="icon"
               onClick={onToggleVideo}
               disabled={isLoading}
@@ -140,7 +140,7 @@ export function ControlBar({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant={isScreenSharing ? 'default' : 'secondary'}
+              variant={isScreenSharing ? 'default' : 'outline'}
               size="icon"
               onClick={onToggleScreenShare}
               disabled={isLoading}
@@ -156,7 +156,7 @@ export function ControlBar({
           <TooltipContent>{isScreenSharing ? 'Stop sharing' : 'Share screen'}</TooltipContent>
         </Tooltip>
 
-        <Separator orientation="vertical" className="h-8 mx-2" />
+        <Separator orientation="vertical" className="h-8 mx-2 bg-gray-200 dark:bg-gray-700" />
 
         {/* Reactions */}
         <Reactions
@@ -167,13 +167,13 @@ export function ControlBar({
           onToggleHandRaise={onToggleHandRaise}
         />
 
-        <Separator orientation="vertical" className="h-8 mx-2" />
+        <Separator orientation="vertical" className="h-8 mx-2 bg-gray-200 dark:bg-gray-700" />
 
         {/* Chat Toggle */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant={isChatVisible ? 'default' : 'secondary'}
+              variant={isChatVisible ? 'default' : 'outline'}
               size="icon"
               onClick={onToggleChat}
               disabled={isLoading}
@@ -189,7 +189,7 @@ export function ControlBar({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant={isParticipantsPanelVisible ? 'default' : 'secondary'}
+              variant={isParticipantsPanelVisible ? 'default' : 'outline'}
               size="icon"
               onClick={onToggleParticipants}
               disabled={isLoading}
@@ -201,7 +201,7 @@ export function ControlBar({
           <TooltipContent>{isParticipantsPanelVisible ? 'Hide participants' : 'Show participants'}</TooltipContent>
         </Tooltip>
 
-        <Separator orientation="vertical" className="h-8 mx-2" />
+        <Separator orientation="vertical" className="h-8 mx-2 bg-gray-200 dark:bg-gray-700" />
 
         {/* Leave Meeting */}
         <Tooltip>

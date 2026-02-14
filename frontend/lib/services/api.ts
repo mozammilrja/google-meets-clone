@@ -41,24 +41,40 @@ class APIClient {
   }
 
   private parseError(error: AxiosError): APIError {
-    const message =
-      (error.response?.data as any)?.message || error.message || 'Unknown error'
+    const responseData = error.response?.data as any
+    const message = responseData?.message || error.message || 'Unknown error'
     return {
       status: error.response?.status || 500,
       message,
-      code: (error.response?.data as any)?.code,
+      code: responseData?.code || responseData?.error,
     }
   }
 
   // Auth endpoints
   async register(data: RegisterRequest): Promise<AuthResponse> {
-    const response = await this.client.post<AuthResponse>('/auth/register', data)
-    return response.data
+    const response = await this.client.post('/auth/register', data)
+    // Transform backend response: { user: { id, email, name }, token } -> { id, email, name, roles, token }
+    const backendData = response.data as { user: { id: string; email: string; name: string }; token: string }
+    return {
+      id: backendData.user.id,
+      email: backendData.user.email,
+      name: backendData.user.name,
+      roles: ['member'],
+      token: backendData.token,
+    }
   }
 
   async login(data: LoginRequest): Promise<AuthResponse> {
-    const response = await this.client.post<AuthResponse>('/auth/login', data)
-    return response.data
+    const response = await this.client.post('/auth/login', data)
+    // Transform backend response: { user: { id, email, name }, token } -> { id, email, name, roles, token }
+    const backendData = response.data as { user: { id: string; email: string; name: string }; token: string }
+    return {
+      id: backendData.user.id,
+      email: backendData.user.email,
+      name: backendData.user.name,
+      roles: ['member'],
+      token: backendData.token,
+    }
   }
 
   async getProfile(): Promise<User> {

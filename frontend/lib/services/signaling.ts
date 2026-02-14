@@ -88,8 +88,8 @@ class SignalingService {
   }
 
   // Meeting events
-  joinMeeting(meetingId: string, userId: string, participantId: string): void {
-    this.socket?.emit('join-meeting', { meetingId, userId, participantId })
+  joinMeeting(meetingId: string, userId: string, participantId: string, name?: string): void {
+    this.socket?.emit('join-meeting', { meetingId, userId, participantId, name })
   }
 
   leaveMeeting(meetingId: string, participantId: string): void {

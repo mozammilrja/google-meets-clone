@@ -189,10 +189,10 @@ export class SignalingGateway implements OnGatewayInit, OnGatewayConnection, OnG
     @MessageBody() data: JoinMeetingDto,
     @ConnectedSocket() client: Socket,
   ) {
-    const { meetingId, participantId } = data;
+    const { meetingId, participantId, name } = data;
     const userId = client.data.userId;
 
-    this.logger.log(`[join-meeting] User ${userId} / Participant ${participantId} joining room: ${meetingId}`);
+    this.logger.log(`[join-meeting] User ${userId} / Participant ${participantId} (name: ${name}) joining room: ${meetingId}`);
 
     try {
       // TODO: Validate that participantId exists in database and belongs to this meeting
@@ -211,7 +211,7 @@ export class SignalingGateway implements OnGatewayInit, OnGatewayConnection, OnG
         userId,
         meetingId,
         socketId: client.id,
-        name: client.data.email, // TODO: Get actual name from participant record
+        name: name || client.data.email || 'Guest',
         role: 'participant', // TODO: Get actual role from participant record
         audio: false,
         video: false,
@@ -660,4 +660,81 @@ export class SignalingGateway implements OnGatewayInit, OnGatewayConnection, OnG
       );
       throw new WsException(err.message);
     }
-  }}
+  }
+
+  /**
+   * Handle reaction emoji - broadcast to all participants in the meeting
+   */
+  @SubscribeMessage('reaction')
+  async handleReaction(
+    @MessageBody() data: { meetingId: string; participantId: string; emoji: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { meetingId, participantId, emoji } = data;
+
+    this.logger.log(`[Reaction] ${participantId} sent emoji "${emoji}" in meeting ${meetingId}`);
+
+    try {
+      // Validate participant is in the meeting
+      if (!this.signalingService.isParticipantInMeeting(meetingId, participantId)) {
+        throw new Error('Participant not in meeting');
+      }
+
+      // Get participant name
+      const presence = this.signalingService.getParticipant(meetingId, participantId);
+      const participantName = presence?.name || 'Unknown';
+
+      // Broadcast reaction to all participants in the meeting
+      this.server.to(meetingId).emit('reaction-received', {
+        participantId,
+        participantName,
+        emoji,
+        timestamp: new Date(),
+      });
+
+      return { success: true };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(`Error in reaction: ${err.message}`, err.stack);
+      throw new WsException(err.message);
+    }
+  }
+
+  /**
+   * Handle hand raise toggle - broadcast to all participants in the meeting
+   */
+  @SubscribeMessage('hand-raise')
+  async handleHandRaise(
+    @MessageBody() data: { meetingId: string; participantId: string; raised: boolean },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { meetingId, participantId, raised } = data;
+
+    this.logger.log(`[Hand Raise] ${participantId} ${raised ? 'raised' : 'lowered'} hand in meeting ${meetingId}`);
+
+    try {
+      // Validate participant is in the meeting
+      if (!this.signalingService.isParticipantInMeeting(meetingId, participantId)) {
+        throw new Error('Participant not in meeting');
+      }
+
+      // Get participant name
+      const presence = this.signalingService.getParticipant(meetingId, participantId);
+      const participantName = presence?.name || 'Unknown';
+
+      // Broadcast hand raise state to all participants in the meeting
+      this.server.to(meetingId).emit('hand-raise-changed', {
+        participantId,
+        participantName,
+        raised,
+        timestamp: new Date(),
+      });
+
+      return { success: true };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(`Error in hand-raise: ${err.message}`, err.stack);
+      throw new WsException(err.message);
+    }
+  }
+}

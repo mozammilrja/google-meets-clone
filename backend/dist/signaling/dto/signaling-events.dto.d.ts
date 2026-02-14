@@ -1,6 +1,7 @@
 export declare class JoinMeetingDto {
     meetingId: string;
     participantId: string;
+    name?: string;
 }
 export declare class LeaveMeetingDto {
     meetingId: string;

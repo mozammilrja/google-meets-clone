@@ -56,4 +56,18 @@ export declare class SignalingGateway implements OnGatewayInit, OnGatewayConnect
         success: boolean;
         messageId: import("mongoose").Types.ObjectId;
     }>;
+    handleReaction(data: {
+        meetingId: string;
+        participantId: string;
+        emoji: string;
+    }, client: Socket): Promise<{
+        success: boolean;
+    }>;
+    handleHandRaise(data: {
+        meetingId: string;
+        participantId: string;
+        raised: boolean;
+    }, client: Socket): Promise<{
+        success: boolean;
+    }>;
 }

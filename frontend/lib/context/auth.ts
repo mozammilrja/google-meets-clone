@@ -55,10 +55,10 @@ export const useAuthStore = create<AuthStore>()(
 )
 
 export const loginUser = (response: AuthResponse) => {
-  const { token, ...user } = response
+  const { token, id, email, name, roles } = response
   useAuthStore.setState({
     token,
-    user,
+    user: { id, email, name, roles },
     error: null,
   })
 }

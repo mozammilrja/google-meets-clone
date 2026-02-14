@@ -11,6 +11,10 @@ export class JoinMeetingDto {
   @IsString()
   @IsNotEmpty()
   participantId!: string;
+
+  @IsString()
+  @IsOptional()
+  name?: string;
 }
 
 /**

@@ -391,16 +391,51 @@ export class RoomService implements OnModuleInit {
   /**
    * Get room stats
    */
-  getStats(): { rooms: number; peers: number; workers: number } {
+  getStats(): { rooms: number; peers: number; workers: number; producers: number; consumers: number } {
     let peers = 0;
+    let producers = 0;
+    let consumers = 0;
+
     for (const room of this.rooms.values()) {
       peers += room.peers.size;
+      for (const peer of room.peers.values()) {
+        producers += peer.producers.size;
+        consumers += peer.consumers.size;
+      }
     }
 
     return {
       rooms: this.rooms.size,
       peers,
       workers: this.workers.length,
+      producers,
+      consumers,
     };
+  }
+
+  /**
+   * Close all rooms gracefully (for shutdown)
+   */
+  async closeAllRooms(): Promise<void> {
+    logger.info({ roomCount: this.rooms.size }, 'Closing all rooms...');
+
+    for (const [roomId, room] of this.rooms) {
+      // Close all peers in the room
+      for (const [peerId] of room.peers) {
+        this.removePeer(roomId, peerId);
+      }
+
+      // Close the router
+      room.router.close();
+      this.rooms.delete(roomId);
+    }
+
+    // Close all workers
+    for (const worker of this.workers) {
+      worker.close();
+    }
+    this.workers = [];
+
+    logger.info('All rooms and workers closed');
   }
 }
